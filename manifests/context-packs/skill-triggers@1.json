@@ -1,7 +1,7 @@
 {
   "coverage": {
     "skills": 314,
-    "withTriggers": 34
+    "withTriggers": 35
   },
   "generatedAt": "2026-10-30T00:01:34.569Z",
   "id": "skill-triggers@1",
@@ -10,7 +10,7 @@
     "id": "hand-seeded",
     "source": "manual-curation-pending-regeneration"
   },
-  "registryDigest": "6f213dc845937b4093bc018d041b25b538d88d78451b9d799ad614989b360ee4",
+  "registryDigest": "6243016e9e7ee97d0e0b20aa4f7b1a7d6500f0f9c12e89479b94e7a2c44acc90",
   "schemaVersion": 1,
   "triggers": {
     "skill:agent-runtime-gateway-smoke-test": [
@@ -303,7 +303,14 @@
       "quality gates",
       "build lint test coverage",
       "before creating a pr"
+    ],
+    "skill:deepseek-harness-setup": [
+      "install ecc on deepseek harness",
+      "deepseek harness profile patch",
+      "ecc dsh activation",
+      "dsh hooks bridge",
+      "deepseek harness setup"
     ]
   },
-  "triggersDigest": "953728cb51ef7726f8a4969efecaec294d37772fcddf8544cd9ee45bff4945ee"
+  "triggersDigest": "f27ad1b05c32c23420fdae23d03b5d66bb83f6eb6107bc4cc32b97c8d897e69b"
 }

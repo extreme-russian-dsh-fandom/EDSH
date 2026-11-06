@@ -1,0 +1,32 @@
+# The ECC bundle patch for DeepSeek Harness.
+#
+# Every row is a Host-plane plugin so ECC works in every agent preset:
+#   * skills  registers the ECC skill catalog on the global skills layer
+#   * commands registers ECC slash commands in the interactive command registry
+#   * hooks   bridges ECC's Claude Code hook events onto DSH agent/tool events
+#   * agents  exposes ECC's specialist agents through one ecc_agent tool
+#
+# `eccRoot` defaults to the parent directory of this bundle, so a linked
+# checkout and an installed copy under ~/.dsh/ecc both resolve their assets
+# without generated paths. Set it explicitly only for a packed install.
+- insert:
+    - id: ecc-skills
+      name: "@ecc/dsh/skills"
+      config:
+        enabled: true
+
+    - id: ecc-commands
+      name: "@ecc/dsh/commands"
+      config:
+        enabled: true
+        includeDoctor: true
+
+    - id: ecc-hooks
+      name: "@ecc/dsh/hooks"
+      config:
+        enabled: true
+
+    - id: ecc-agents
+      name: "@ecc/dsh/agents"
+      config:
+        enabled: true

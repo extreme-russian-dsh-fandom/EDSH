@@ -103,7 +103,7 @@ Use the [guided setup](#install-ecc) or [native plugin commands](#claude-code-de
 
 </div>
 
-<sub>**OSS stays free.** This repo is MIT-licensed forever. ECC Pro is the hosted GitHub App for private repos. <a href="https://github.com/sponsors/affaan-m">Sponsors</a> and <a href="https://ecc.tools/pricing">Pro subscribers</a> fund the work. That's why a single maintainer ships weekly across 7 harnesses.</sub>
+<sub>**OSS stays free.** This repo is MIT-licensed forever. ECC Pro is the hosted GitHub App for private repos. <a href="https://github.com/sponsors/affaan-m">Sponsors</a> and <a href="https://ecc.tools/pricing">Pro subscribers</a> fund the work. That's why a single maintainer ships weekly across the major coding harnesses.</sub>
 
 <div align="center">
 
@@ -139,7 +139,7 @@ Instead of rebuilding that process in every prompt, you install it once and make
 
 > Optimize the context window. Persist everything else.
 
-ECC is MIT-licensed open source. It works best with Claude Code today, has native Codex and Qoder plugin paths, and provides capability-limited adapters for Cursor, OpenCode, Gemini, Zed, GitHub Copilot, Antigravity, Qwen, and other harnesses. See the [support status matrix](#platform-support) before assuming feature parity.
+ECC is MIT-licensed open source. It works best with Claude Code today, has native Codex and Qoder plugin paths, a native DeepSeek Harness bundle, and provides capability-limited adapters for Cursor, OpenCode, Gemini, Zed, GitHub Copilot, Antigravity, Qwen, and other harnesses. See the [support status matrix](#platform-support) before assuming feature parity.
 
 Access to 71 agents, 314 skills, and 98 legacy command shims, plus hooks, rules, memory, continuous learning, and AgentShield security scanning. The agents are specialized for planning, review, build repair, security, architecture, and domain work.
 
@@ -412,7 +412,7 @@ the [.qoder-plugin notes](.qoder-plugin/README.md) for the exact boundary.
 ### Other agents and editors
 
 <details>
-<summary><strong>Cursor, OpenCode, Gemini, Zed, Antigravity, Qwen, Hermes, OpenClaw, Kimi, CodeBuddy, JoyCode, Copilot</strong></summary>
+<summary><strong>Cursor, OpenCode, Gemini, Zed, Antigravity, Qwen, Hermes, OpenClaw, Kimi, CodeBuddy, JoyCode, Copilot, DeepSeek Harness</strong></summary>
 
 Clone ECC once, then choose the target that matches your harness:
 
@@ -435,8 +435,11 @@ cd ECC
 | CodeBuddy | `./install.sh --profile minimal --target codebuddy` | Project-local `.codebuddy/` install |
 | JoyCode | `./install.sh --profile minimal --target joycode` | Project-local `.joycode/` install |
 | GitHub Copilot | `./install.sh --profile full --target copilot` | Installs skills to `.github/skills/` and agents to `.github/agents/` for Copilot CLI |
+| DeepSeek Harness | `./install.sh --profile dsh --target dsh --enable-hooks` then `node scripts/dsh/activate.js --profile desktop` | Native Cordis bundle with skills, commands, agents, and hooks · [DSH guide](docs/DEEPSEEK-HARNESS-GUIDE.md) |
 
 GitHub Copilot support is already included in this repository. `.github/copilot-instructions.md` provides the instruction layer, `.github/prompts/` contains the reusable `/plan`, `/tdd`, `/security-review`, `/build-fix`, and `/refactor` prompts, and `.vscode/settings.json` enables `chat.promptFiles`. GitHub Copilot CLI additionally discovers the `.agents/skills/` subset from a plain clone with no setup; see [Platform Support](#platform-support) for the full catalog and agents.
+
+DeepSeek Harness support is a native Cordis bundle under [`.dsh/`](.dsh/README.md). It registers ECC skills, 98 slash commands, 71 specialists through one `ecc_agent` tool, and 27 hook commands (26 supported) on the harness's own agent and tool events. Install with `--target dsh`, activate the profile, and verify with `/ecc-doctor`; the adapter does not copy skills into `~/.dsh/skills` or rewrite a user's `AGENTS.md`.
 
 For a harness without a native ECC target, use the [manual adaptation guide](docs/MANUAL-ADAPTATION-GUIDE.md). It explains how to carry a small set of ECC skills and workflow instructions into chat-style tools without pretending hooks or native skill discovery are available.
 
@@ -847,7 +850,7 @@ The `ito-compute-cli` package is currently unpublished. Build it locally from th
 Current release: **2.2.3** (2026-10-01). Highlights of the 2.2 line:
 
 - Guided, manifest-driven setup across Claude Code, Codex, and Kimi Code, with install-state ownership, doctor, repair, and uninstall.
-- Native Antigravity install, a thin Pi adapter, and the packed-artifact release gate tested on Linux, macOS, and Windows.
+- Native Antigravity install, a thin Pi adapter, a native DeepSeek Harness bundle, and the packed-artifact release gate tested on Linux, macOS, and Windows.
 - Plan Canvas browser review, the unified memory vault (`ecc memory`), and the Itô compute skill family.
 
 Full history: [CHANGELOG.md](CHANGELOG.md). Per-release notes and evidence live under [docs/releases/](docs/releases/).
@@ -869,6 +872,7 @@ ECC/
 |-- .claude-plugin/   # Claude Code marketplace manifest
 |-- .codex/           # Codex reference configuration and agent roles
 |-- .opencode/        # OpenCode plugin, commands, and instructions
+|-- .dsh/             # DeepSeek Harness Cordis bundle
 |-- .cursor/          # Cursor rules and hook adapter
 |-- docs/             # public setup, architecture, and operating guides
 ```
@@ -1331,6 +1335,7 @@ Treat `stable`, `beta`, `experimental`, and `instruction-only` below as capabili
 | Qoder | Supported native plugin | Local plugin directory in Qoder CLI or ZIP upload in Qoder IDE | Loads the canonical skills, agents, commands, and MCP config; only the reviewed SessionStart hook is enabled, and Node.js 18+ must be on the non-interactive PATH. |
 | Cursor | Beta project adapter | Selective installer into `.cursor/` | Agent discovery varies by Cursor build; hook events use profile-gated dispatchers, but full Claude feature parity is not claimed. |
 | OpenCode | Beta built plugin | Build plugin, then selective installer | ECC ships a subset of the catalog; connect a provider and select a model in OpenCode ([#2617](https://github.com/affaan-m/ECC/issues/2617)). |
+| DeepSeek Harness | Supported native bundle | `--target dsh` plus profile activation | Native Cordis bundle; PreCompact has no DSH event, commands steer prompt expansions, and delegated agents inherit the caller preset. |
 | GitHub Copilot Chat | Instruction-only | Checked-in instructions and prompt files | ECC hooks are not adapted. |
 | GitHub Copilot CLI | Beta project adapter | `--target copilot` places skills, adapted agents, and converted rules in `.github/` | ECC hooks and command shims are not installed by this target. |
 | Gemini, Zed, Antigravity, Qwen, Hermes, OpenClaw, Kimi, CodeBuddy, JoyCode | Experimental/minimal adapters | Harness-specific selective target | File placement and instruction portability are tested; full Claude feature parity is not claimed. |

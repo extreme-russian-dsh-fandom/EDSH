@@ -102,6 +102,16 @@ function runTests() {
     assert.ok(res.stderr.includes('Missing value for --ecc-root'));
   })) passed++; else failed++;
 
+  if (test('CLI rejects a flag value that starts with --', () => {
+    const repoRoot = path.resolve(__dirname, '..', '..');
+    const res = spawnSync('node', [
+      path.join(repoRoot, 'scripts', 'dsh', 'generate-hooks-config.js'),
+      '--ecc-root', '--out', '/tmp/x.json',
+    ], { encoding: 'utf8' });
+    assert.strictEqual(res.status, 2, 'exit 2 on flag-shaped value, stderr: ' + res.stderr);
+    assert.ok(res.stderr.includes('Missing value for --ecc-root'));
+  })) passed++; else failed++;
+
   if (test('CLI end-to-end writes valid JSON to --out', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ecc-dsh-'));
     const outPath = path.join(tmp, 'hooks.dsh.json');

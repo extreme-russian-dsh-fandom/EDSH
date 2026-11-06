@@ -108,6 +108,43 @@
         "documentation-module-governance",
         "documentation-test-regression"
       ]
+    },
+    "dsh": {
+      "description": "Complete DeepSeek Harness setup: 313 ECC skills (Nasiko is opt-in), commands, agents, native hook bridge, rules, and workflow assets.",
+      "modules": [
+        "rules-core",
+        "agents-core",
+        "shared-script-utils",
+        "commands-core",
+        "hooks-runtime",
+        "platform-configs",
+        "framework-language",
+        "database",
+        "workflow-quality",
+        "documentation-governance",
+        "skill-unified-memory",
+        "security",
+        "research-apis",
+        "business-content",
+        "operator-workflows",
+        "optimization-workflows",
+        "prediction-market-skills",
+        "operator-desk-patterns",
+        "ito-compute",
+        "social-distribution",
+        "media-generation",
+        "orchestration",
+        "swift-apple",
+        "agentic-patterns",
+        "devops-infra",
+        "machine-learning",
+        "supply-chain-domain",
+        "document-processing",
+        "documentation-context",
+        "documentation-change-impact",
+        "documentation-module-governance",
+        "documentation-test-regression"
+      ]
     }
   }
 }

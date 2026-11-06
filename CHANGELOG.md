@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+
+- Native DeepSeek Harness adapter in `.dsh/`: a Host-plane Cordis bundle that registers the ECC skill catalog (314 canonical) on a global DSH skill provider, 98 slash commands (with `/plan` aliased to `/ecc-plan`), 71 specialists through one `ecc_agent` delegation tool, and a native bridge for 27 ECC hook commands (26 bridgeable on 7 supported DSH events; PreCompact is reported as unsupported).
+- First-class `dsh` install target (`dsh-home`) and a complete `dsh` install profile, with managed copies under `~/.dsh/ecc`, install-state ownership, and a `scripts/dsh/activate.js` helper that patches profile layers idempotently and rolls back with `--remove`.
+- `/ecc-doctor` and `tests/dsh/` coverage for the skill, command, agent, hook, install, and activation surfaces.
+
 ### Changed
 
 - GateGuard first-touch denials ask questions that fit the target: by class (instruction, test, prose, config, code) on its project-relative path, and for code by what the change touches. An edit that changes no public declaration asks for the in-module call sites instead of importers and public API, and the data-schema question is dropped when the change handles no data. Changes the hook cannot read with confidence keep the original four questions word for word.

@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 /**
- * Generate a DeepSeek Harness (DSH) hooks config from hooks/hooks.json.
+ * Legacy hook-config generator for DeepSeek Harness 0.2.0-rc.1.
  *
- * DSH bridges ECC command hooks through the first-party plugin
- * @deepseek-ai/dsh-hooks-claude-code. The bridge supports a subset of
- * Claude Code hook events and lower-cases tool names in matchers, so this
- * script converts the canonical ECC hooks.json into a DSH-compatible file.
+ * DSH 0.2.0 shipped @deepseek-ai/dsh-hooks-claude-code, which consumed a
+ * Claude Code hooks document. That bridge is no longer part of the 0.2.1
+ * runtime, so current installs use the native bridge in `.dsh/hooks.js` and do
+ * not generate a bridge config. This script remains for older CLI installs
+ * that still mount the first-party bridge.
  *
  * Usage:
  *   node scripts/dsh/generate-hooks-config.js [--ecc-root <dir>] [--out <file>]
@@ -14,10 +15,10 @@
  *   --ecc-root  directory of this checkout (repo root)
  *   --out       <ecc-root>/hooks/hooks.dsh.json
  *
- * The output is a Claude Code hooks-format file consumed by the bridge:
+ * The output is a Claude Code hooks-format file consumed by the legacy bridge:
  *   { "hooks": { "PreToolUse": [ { "matcher": "...", "hooks": [...] } ] } }
  *
- * Unsupported ECC events (no DSH bridge counterpart) are skipped and
+ * Unsupported ECC events (no legacy DSH bridge counterpart) are skipped and
  * reported on stderr: PreCompact, PostToolUseFailure, SessionEnd.
  */
 'use strict';

@@ -163,6 +163,24 @@ const HARNESS_CAPABILITIES = deepFreeze([
     aliases: ['open-code'],
   },
   {
+    id: 'dsh',
+    label: 'DeepSeek Harness',
+    targetIds: ['dsh'],
+    channel: 'managed-home',
+    installMode: 'managed-home',
+    guidedReady: false,
+    availability: 'advanced',
+    destination: '~/.dsh',
+    destinationResolution: 'DSH_HOME, then ~/.dsh',
+    scopes: [scope('home', 'dsh', '~/.dsh')],
+    hooks: hooks(
+      'adapter-configured',
+      true,
+      'ECC runs a native DSH hook bridge over agent and tool events; PreCompact has no DSH counterpart.'
+    ),
+    aliases: ['deepseek-harness', 'deepseek'],
+  },
+  {
     id: 'codebuddy',
     label: 'CodeBuddy',
     targetIds: ['codebuddy'],

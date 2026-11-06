@@ -12,7 +12,9 @@ The goal is to keep the durable parts of agentic work in one repo:
 - session and orchestration patterns
 - durable, harness-neutral memory documents
 
-Claude Code, Codex, OpenCode, Cursor, Gemini, and future harnesses should adapt those assets at the edge instead of requiring a new workflow model for every tool.
+Claude Code, Codex, OpenCode, Cursor, Gemini, DeepSeek Harness, and future
+harnesses should adapt those assets at the edge instead of requiring a new
+workflow model for every tool.
 
 For the operator-facing support matrix and scorecard workflow, see
 [Harness Adapter Compliance Matrix](harness-adapter-compliance.md).
@@ -23,11 +25,11 @@ For the full-stack platform framing and product-integration loop, see
 
 | Surface | Shared Source | Harness Adapter | Current Status |
 |---------|---------------|-----------------|----------------|
-| Skills | `skills/*/SKILL.md` | Claude plugin, Codex plugin, `.agents/skills`, Cursor skill copies, OpenCode plugin/config | Supported with harness-specific packaging |
-| Rules and instructions | `rules/`, `AGENTS.md`, translated docs | Claude rules install, Codex `AGENTS.md`, Cursor rules, OpenCode instructions | Supported, but not identical across harnesses |
-| Hooks | `hooks/hooks.json`, `scripts/hooks/` | Claude native hooks, OpenCode plugin events, Cursor hook adapter | Hook-backed in Claude/OpenCode/Cursor; instruction-backed in Codex |
+| Skills | `skills/*/SKILL.md` | Claude plugin, Codex plugin, `.agents/skills`, Cursor skill copies, OpenCode plugin/config, DSH skill provider | Supported with harness-specific packaging |
+| Rules and instructions | `rules/`, `AGENTS.md`, translated docs | Claude rules install, Codex `AGENTS.md`, Cursor rules, OpenCode instructions, DSH installed assets | Supported, but not identical across harnesses |
+| Hooks | `hooks/hooks.json`, `scripts/hooks/` | Claude native hooks, OpenCode plugin events, Cursor hook adapter, DSH native event bridge | Hook-backed in Claude/OpenCode/Cursor/DSH; instruction-backed in Codex |
 | MCPs | `.mcp.json`, `mcp-configs/` | Native MCP config import per harness | Supported where the harness exposes MCP |
-| Commands | `commands/`, CLI scripts | Claude slash commands, compatibility shims, CLI entrypoints | Supported, but command semantics vary |
+| Commands | `commands/`, CLI scripts | Claude slash commands, compatibility shims, CLI entrypoints, DSH command registry | Supported, but command semantics vary |
 | Memory | `.ecc/memory/`, `~/.ecc/memory/` | `ecc memory` CLI or opt-in `ecc-memory-mcp` stdio server | Supported with explicit recall and unreviewed writes |
 | Sessions | `ecc2/`, session adapters, orchestration scripts | TUI/daemon, tmux/worktree orchestration, harness-specific runners | Alpha |
 
@@ -52,6 +54,7 @@ Each harness has different loading and enforcement behavior:
 - Claude Code loads plugin assets and has native hook execution.
 - Codex reads `AGENTS.md`, plugin metadata, skills, and MCP config, but hook parity is instruction-driven.
 - OpenCode has a plugin/event system that can reuse ECC hook logic through an adapter layer.
+- DeepSeek Harness exposes commands, skills, tools, subagents, and agent/tool events; `.dsh/` maps ECC hook commands onto those events directly and keeps canonical assets in place. See the [DSH Native Adapter Decision](../design/dsh-native-adapter.md).
 - Cursor uses its own rule and hook layout, so ECC maintains translated surfaces under `.cursor/`.
 - Gemini support is install/instruction oriented and should be treated as a compatibility surface, not as full hook parity.
 
@@ -63,7 +66,7 @@ The session snapshot side of this contract (`ecc.session.v1`) is specified in
 [session-adapter-contract.md](session-adapter-contract.md).
 
 ECC Memory Vault is the common knowledge-transfer surface for Claude, Codex,
-Hermes, Cursor, OpenCode, and other agents. It stores portable
+Hermes, Cursor, OpenCode, DeepSeek Harness, and other agents. It stores portable
 `ecc.memory.v1` Markdown documents in three scopes:
 
 - project: `<repo>/.ecc/memory/project/`

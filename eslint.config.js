@@ -38,6 +38,14 @@ module.exports = [
         }
     },
     {
+        // The DeepSeek Harness bundle is ESM: cordis imports the entry files
+        // directly, so Node parses them as modules.
+        files: ['.dsh/**/*.js'],
+        languageOptions: {
+            sourceType: 'module'
+        }
+    },
+    {
         files: ['docker/context-profiles/complex-eval/**/recurring-incident/**/*.js'],
         languageOptions: {
             sourceType: 'module'

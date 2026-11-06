@@ -1,82 +1,275 @@
 # DeepSeek Harness Guide
 
-ECC runs on the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) via its
-native skill roots and the first-party Claude Code hooks bridge. This guide covers
-what works out of the box, how to mount the ECC hooks, and the current limits.
+ECC runs on the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
+(DSH) as a native Cordis bundle. The adapter is in [`.dsh/`](../.dsh/README.md);
+this guide is the operator-facing setup and reference page.
 
-Unlike the Qwen or Codex adapters, there is no dedicated installer target yet; the
-setup is a small amount of manual configuration described below.
+The integration is deliberately thin: canonical ECC skills, commands, agents,
+hooks, and rules stay in their normal directories. DSH gets one Host-plane
+bundle that registers four surfaces on the harness's own services.
 
-## Prerequisites
+## Requirements
 
-- DeepSeek Harness 0.2.0-rc.1 (the verified version; reverify newer releases) (`dsh --version`).
-- ECC repository cloned locally, for example `~/ECC` (the hooks bridge commands
-  reference this path, so keep the checkout in place).
-- Skills need no extra tooling; hooks use the `@deepseek-ai/dsh-hooks-claude-code`
-  plugin that ships inside the DSH runtime itself.
+- DeepSeek Harness `0.2.1-rc.5` or newer (verified against `0.2.1-rc.5`).
+- Node.js 20 or newer.
+- An ECC checkout.
 
-## Skills (automatic)
+The Desktop profile is verified against `0.2.1-rc.5`; the CLI/web composition
+uses the same public services and should be rechecked with `/ecc-doctor` after
+an upgrade. The adapter does not need a `dsh` binary on `PATH`; the installer
+writes files and the profile activation script edits the profile patch layer.
 
-DSH loads skills from these roots (earlier roots win on name conflicts):
+## Install
+
+```bash
+git clone https://github.com/extreme-russian-dsh-fandom/EDSH.git
+cd EDSH
+
+# 1. Install the full ECC catalog into the DSH home.
+./install.sh --profile dsh --target dsh --enable-hooks
+
+# 2. Activate the bundle in the profile that should load it.
+node scripts/dsh/activate.js --profile desktop
+```
+
+Windows PowerShell:
+
+```powershell
+./install.ps1 --profile dsh --target dsh --enable-hooks
+node scripts/dsh/activate.js --profile desktop
+```
+
+Use `--profile core` for a smaller install, or `--modules` for an explicit set.
+The installer copies assets under `~/.dsh/ecc/`:
 
 ```text
-<project>/.dsh/skills
-<project>/.agents/skills
-custom dirs (~/.dsh/profiles/<profile>/cordis.patch.yml -> skill-filesystem)
-~/.dsh/skills
-~/.agents/skills
+~/.dsh/ecc/
+  bundle/       # .dsh Cordis bundle
+  skills/       # 313 skills by default (314 canonical; Nasiko is opt-in)
+  commands/     # 98 commands
+  agents/       # 71 agents
+  hooks/        # hooks.json
+  scripts/      # hook runtime
+  rules/        # ECC rule packs
+  mcp-configs/  # reference configs
+  install-state.json
 ```
 
-Because ECC already ships `.agents/skills/` for Codex, opening a session with the
-ECC checkout as the working directory exposes a subset of ECC skills immediately.
-To expose the full curated set in every project, link the catalog once:
+`activate.js` appends a managed block to
+`~/.dsh/profiles/<name>/cordis.patch.yml`:
+
+```yaml
+- insert:
+    - id: ecc-skills
+      name: "../../ecc/bundle/skills.js"
+    - id: ecc-commands
+      name: "../../ecc/bundle/commands.js"
+    - id: ecc-hooks
+      name: "../../ecc/bundle/hooks.js"
+    - id: ecc-agents
+      name: "../../ecc/bundle/agents.js"
+```
+
+Relative `name` values are anchored beside the profile patch file by the DSH
+Loader, so no package-manager step is required. The block is idempotent and
+`--remove` restores the user's patch layer.
+
+### Alternative: DSH plugin lifecycle
+
+A local bundle directory is linked rather than copied by
+`plugin_manager install_bundle`. Install the generated bundle directly if you
+prefer the DSH lifecycle:
+
+```text
+plugin_manager action=install_bundle target=/absolute/path/to/.dsh/ecc/bundle
+```
+
+Both paths end with the same four Host rows. Do not stack them.
+
+## Surfaces
+
+| Surface | DSH mechanism | What ECC supplies |
+|---|---|---|
+| Skills | Global `ctx.skills` provider | 313 default skills (314 canonical) |
+| Commands | `ctx.commands.register` | 98 prompt-template commands plus `/ecc-doctor` |
+| Agents | `ctx.tools.register` + `ctx.subagents` | One `ecc_agent` tool over 71 specialists |
+| Hooks | Agent and tool event listeners | 27 parsed (26 supported) |
+| Rules | Runtime assets | `rules/common/` and language rule packs for skills and commands |
+
+Every row is Host-plane, so ECC is available in every agent preset. The adapter
+does not add or replace a preset.
+
+### Skills
+
+`ecc-skills` scans `<eccRoot>/skills/*/SKILL.md` and registers an `ecc` provider
+on the global skills layer. Catalog discovery reads frontmatter only; a load
+re-reads the current body, so editing a skill needs no restart. Name conflicts
+with user roots resolve by the normal DSH priority chain; ECC never copies into
+`~/.dsh/skills`.
+
+The `dsh` install profile includes 313 of the 314 canonical skills. The
+experimental Nasiko control-plane skill remains opt-in and can be added with
+`--modules nasiko-control-plane`; `/ecc-doctor` reports the installed count.
+
+### Commands
+
+An ECC command is a prompt template, while a DSH command is a direct human
+action. The adapter:
+
+1. reads the command frontmatter and body;
+2. expands `$ARGUMENTS`, `${ARGUMENTS}`, `$1`-`$9`, and `${1}`-`${9}`;
+3. appends the user's input as a `## User Input` section when the body has no
+   placeholder;
+4. steers the expanded prompt to the receiving agent and returns a short result.
+
+The command result stays outside model history. `/plan` is already owned by DSH
+plan mode, so ECC's command is registered as `/ecc-plan`; every other command
+keeps its name. `/ecc-doctor` is built in.
+
+### Agents
+
+`ecc_agent` takes `agent`, `task`, and an optional `cwd`. The adapter reads
+`agents/*.md`, composes the specialist's role prompt and the task, and starts a
+context-free child through the DSH subagent service using the caller's current
+preset. The child therefore keeps the parent's tools; the role prompt and the
+delegated task define the specialist work. The parent receives the standard
+completion notice.
+
+The tool description lists all 71 specialists within a bounded character budget,
+and the `agent` parameter is an enum of exact names. Unknown names fail before
+any child is created.
+
+### Hooks
+
+The bridge keeps `hooks/hooks.json` as the source of truth. Commands, matchers,
+timeouts, async flags, `ECC_HOOK_PROFILE`, and `ECC_DISABLED_HOOKS` are preserved.
+
+| ECC event | DSH event | Translation |
+|---|---|---|
+| `SessionStart` | `agent/created` | Hook context is injected before the first request |
+| `UserPromptSubmit` | `agent/pre-step` | Additional context is injected for the step |
+| `PreToolUse` | `tools/pre-execute` | `deny` → deny; `ask` → ask; context → inject |
+| `PostToolUse` | `tools/post-execute` | `block` → feedback; context → inject |
+| `PostToolUseFailure` | `tools/post-execute` (error result) | Same post-hook contract |
+| `Stop` | `agent/turn-stopping` | A blocking reason steers another step |
+| `SessionEnd` | `agent/disposed` | Cleanup runs without blocking disposal |
+| `SubagentStart` | `subagent/start` | Observation runs in the background |
+| `SubagentStop` | `subagent/end` | Observation runs in the background |
+| `PreCompact` | no public DSH event | Reported as unsupported by `/ecc-doctor` |
+
+Hook input is the documented Claude Code JSON, built from DSH values:
+`session_id`, `cwd`, `hook_event_name`, `tool_name`, `tool_input`,
+`tool_response`, `prompt`, `source`, and `agent_id`. Tool names and arguments are
+mapped to the Claude names ECC hooks inspect (`bash`/`pwsh` → `Bash`/`PowerShell`,
+`write` → `Write`, `edit` → `Edit`, and so on).
+
+Execution:
+
+- A command that starts with `node` is spawned directly with the Host's Node
+  binary. No shell quoting is involved, including for checkout paths with
+  spaces or Windows paths.
+- Other commands fall back to the platform shell.
+- Synchronous hooks are awaited; `async: true` hooks are fire-and-forget.
+- Stop hooks with a timeout above `stopBlockingTimeoutSeconds` (default 30) run
+  in the background, so a long formatter or type-check cannot freeze a turn.
+- Hook input is capped at 1 MiB. An oversized tool response is replaced by a
+  valid truncation marker; the bridge never sends malformed JSON.
+- Hook failures are logged and fail open, except an explicit `deny`/`block`
+  result or exit code 2.
+
+### Rules
+
+Rules are installed with the rest of the runtime for skills and commands. The
+adapter does not rewrite a user's global `AGENTS.md`; project instructions keep
+their normal DSH precedence.
+
+## Verify
+
+Inside a DSH session:
+
+```text
+/ecc-doctor
+```
+
+The report shows the ECC root, skill/command/agent counts, hook coverage, names
+that were aliased because the harness owns them, and every unsupported event.
+
+Outside DSH:
 
 ```bash
-ln -s /path/to/ECC/skills/<skill-name> ~/.dsh/skills/<skill-name>
+node tests/dsh/catalog.test.js
+node tests/dsh/hook-bridge.test.js
+node tests/dsh/plugin-wiring.test.js
+node tests/dsh/install-target.test.js
+node tests/dsh/activation.test.js
+npm run harness:adapters -- --check
 ```
 
-Run this per skill with real names substituted for both placeholders (for
-example `ln -s ~/ECC/skills/tdd-workflow ~/.dsh/skills/tdd-workflow`); the
-angle brackets are placeholders, not shell syntax.
+Optional Host-side inspection:
 
-DSH reads `SKILL.md` frontmatter (name/description), which matches the ECC skill
-format, so no conversion is needed. Name conflicts with pre-existing user skills
-are resolved by root priority; skip those skills when linking.
+```text
+cordis_inspect_query platform=host provider=Config method=listConfigs name=@ecc/dsh
+```
 
-## Hooks
+The four rows should appear as `ecc-skills`, `ecc-commands`, `ecc-hooks`, and
+`ecc-agents`.
 
-### How the bridge works
-
-DSH bridges ECC command hooks through `@deepseek-ai/dsh-hooks-claude-code`
-(first-party, bundled with the runtime). Constraints that shape the conversion:
-
-- Supported events: `SessionStart`, `UserPromptSubmit`, `PreToolUse`,
-  `PostToolUse`, `Stop`, `SubagentStart`, `SubagentStop`. ECC events without a
-  bridge counterpart (`PreCompact`, `PostToolUseFailure`, `SessionEnd`) are
-  skipped by the generator.
-- DSH tool names are lower-case (`bash`, `edit`, `write`, `skill`, `task`),
-  while ECC matchers use Claude Code names (`Bash`, `Edit|MultiEdit`, ...). The
-  generator maps known tool names and keeps regex passthrough tokens.
-- The bridge runs commands with `bash -c` and does not export the plugin root as
-  an environment variable for hook processes. The generator prefixes each command
-  with `CLAUDE_PLUGIN_ROOT=<ecc-root> ECC_PLUGIN_ROOT=<ecc-root>` (env-prefix
-  form), which the ECC hook bootstrap reads at startup.
-- `timeout` values are seconds in both formats and are preserved.
-
-### Generate the config
+## Updating
 
 ```bash
-node scripts/dsh/generate-hooks-config.js --ecc-root /path/to/ECC --out ~/.dsh/ecc/hooks-dsh.json
+git pull
+./install.sh --profile dsh --target dsh --enable-hooks
+node scripts/dsh/activate.js --profile desktop
 ```
 
-The script validates nothing about your DSH install; it only converts
-`hooks/hooks.json` into the bridge format and prints what it skipped.
+The activation block is replaced in place; unrelated profile rows are preserved.
+Skills, commands, agents, and hooks come from the refreshed install.
 
-### Mount into a profile
+## Uninstall
 
-Add a bare insert entry to the profile patch layer
-(`~/.dsh/profiles/<profile>/cordis.patch.yml`). This mirrors how the bundled web
-app preset mounts its plugins:
+```bash
+node scripts/dsh/activate.js --profile desktop --remove
+rm -rf ~/.dsh/ecc
+```
+
+`--remove` deletes only the managed block. The installer's state file under
+`~/.dsh/ecc` records managed copies; removing that directory removes the
+adapter's files and the bundle.
+
+## Limits
+
+- **PreCompact has no DSH counterpart.** The PreCompact hook is reported, never
+  silently claimed.
+- **Commands are prompt expansions.** DSH command results cannot rewrite model
+  history; the adapter steers the prompt as the next user-role input.
+- **Agent tools follow the parent.** A delegated ECC agent inherits the caller's
+  preset, so its available tools may be broader or narrower than the agent's
+  Claude Code `tools:` line. The role prompt states the intended tools and asks
+  the child to report a capability gap.
+- **Model names are metadata.** ECC's `model: opus`/`sonnet` hints are not
+  translated to DeepSeek routes; DSH owns model selection.
+- **Packed installs must set `eccRoot`.** A local directory install is linked and
+  resolves the parent bundle directory automatically. A packed package must set
+  `eccRoot` on each row to the installed ECC runtime root.
+
+## Legacy bridge
+
+DSH `0.2.0-rc.1` exposed `@deepseek-ai/dsh-hooks-claude-code`, a first-party
+bridge for Claude Code command hooks. [PR #3309](https://github.com/affaan-m/ECC/pull/3309)
+introduced that manual path; it was merged through PR #3495 and is the ancestor
+of today's adapter. The package is not part of the `0.2.1` Desktop runtime, so
+current installs use the native bridge in `.dsh/hooks.js`.
+
+For an older 0.2.0 CLI installation that still ships the bridge:
+
+```bash
+node scripts/dsh/generate-hooks-config.js \
+  --ecc-root /path/to/ECC \
+  --out ~/.dsh/ecc/hooks-dsh.json
+```
+
+Then add one bare `insert` row to
+`~/.dsh/profiles/<profile>/cordis.patch.yml`:
 
 ```yaml
 - insert:
@@ -86,58 +279,16 @@ app preset mounts its plugins:
         configPath: /absolute/path/to/hooks-dsh.json
 ```
 
-Configuration notes from practice:
+The legacy path covers only the events the 0.2.0 bridge supported (the generator
+prints what it skipped), exposes skills only through linked roots, and provides
+neither native commands nor agent dispatch nor an installer target. Do not use
+it on `0.2.1` or newer: the package is absent, and the native bundle provides 26
+supported hooks plus the commands, agents, and skills.
 
-- A plain top-level entry (`- id: ...`) is silently dropped; the loader only
-  treats `insert` entries as additions.
-- `insert` under an existing non-group id is rejected ("not a group"); use a bare
-  insert without a target id.
-- The plugin package does not need to be added to the profile `package.json`;
-  first-party plugins resolve from the DSH runtime install.
-- Validate without booting: `cd ~/.dsh && dsh --profile <profile> --dump-config`
-  (compose errors and dropped entries are reported on stderr).
+## Security
 
-### Verify
-
-```bash
-# Compose check (no session boot). Keep stderr visible: silently dropped or
-# rejected patch entries are reported there while the exit status stays 0.
-cd ~/.dsh && dsh --profile web --dump-config > /tmp/dump.yml
-
-grep ecc-hooks /tmp/dump.yml
-
-# End-to-end: fire a SessionStart hook in a one-shot headless session
-# (uses a test config with a single marker-writing hook)
-dsh --profile headless --patch /tmp/ecc-patch-test.yml 'Reply with exactly: BOOT-OK'
-```
-
-A successful compose does not prove the entry mounted: dropped entries and
-"is not a group" rejections only appear on stderr, never in the exit status.
-Confirm the entry id exists in the dump and that stderr was empty.
-
-In a live web session, the GateGuard fact-forcing hook denies the first
-edit/write/bash attempt until facts are presented — a visible signal that the
-bridge is active.
-
-## Updating
-
-```bash
-cd /path/to/ECC && git pull
-node scripts/dsh/generate-hooks-config.js --ecc-root /path/to/ECC --out ~/.dsh/ecc/hooks-dsh.json
-```
-
-Linked skills reflect the pull immediately (symlinks), only the hooks config
-needs regeneration.
-
-## Scope
-
-| Surface | Status on DSH |
-|---------|---------------|
-| Skills | Native discovery; individual workflows retain their harness prerequisites |
-| Hooks (23 command hooks, 5 of 7 events) | Works via the bridge; 3 events unsupported |
-| Commands (slash-command surface) | Not available (Claude Code mechanism); workflows are covered by skills |
-| Agents | Native dispatch unverified; use canonical prompt guidance only after review |
-
-The validated setup here targets the CLI/web profile. Desktop profiles have a separate
-installation-owned runtime and skill discovery must be verified there independently.
-Generate hooks only from a reviewed ECC checkout; the linked checkout supplies their runtime.
+The hook bridge executes local Node processes from the ECC checkout with the
+Host's permissions. Install only from a reviewed checkout, keep the checkout
+outside world-writable directories, and read `hooks/hooks.json` before enabling
+the runtime. ECC does not install network MCP servers, read credentials, or
+send repository content anywhere.
