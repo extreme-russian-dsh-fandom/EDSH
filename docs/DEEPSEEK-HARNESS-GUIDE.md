@@ -74,6 +74,9 @@ Relative `name` values are anchored beside the profile patch file by the DSH
 Loader, so no package-manager step is required. The block is idempotent and
 `--remove` restores the user's patch layer.
 
+Restart DeepSeek Harness, or start a new session in a running app, then run
+`/ecc-doctor` to confirm the rows are live.
+
 ### Alternative: DSH plugin lifecycle
 
 A local bundle directory is linked rather than copied by

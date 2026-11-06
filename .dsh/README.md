@@ -50,6 +50,9 @@ On Windows:
 node scripts/dsh/activate.js --profile desktop
 ```
 
+Restart DeepSeek Harness, or start a new session in a running app, then run
+`/ecc-doctor` in that session.
+
 `--profile dsh` installs the complete engineering catalog: every command, agent,
 hook, and rule, plus 313 of the 314 canonical skills. The experimental Nasiko
 control-plane skill stays opt-in; add it with

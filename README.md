@@ -441,6 +441,42 @@ GitHub Copilot support is already included in this repository. `.github/copilot-
 
 DeepSeek Harness support is a native Cordis bundle under [`.dsh/`](.dsh/README.md). It registers ECC skills, 98 slash commands, 71 specialists through one `ecc_agent` tool, and 27 hook commands (26 supported) on the harness's own agent and tool events. Install with `--target dsh`, activate the profile, and verify with `/ecc-doctor`; the adapter does not copy skills into `~/.dsh/skills` or rewrite a user's `AGENTS.md`.
 
+#### DeepSeek Harness: install and run
+
+Run these from the ECC checkout:
+
+```bash
+# 1. Copy the bundle, skills, commands, agents, hooks, and rules.
+./install.sh --profile dsh --target dsh --enable-hooks
+
+# 2. Add the managed ECC block to a profile.
+node scripts/dsh/activate.js --profile desktop
+
+# Windows: use ./install.ps1 with the same arguments.
+```
+
+Restart DeepSeek Harness, or start a new session in an already running app. Then run this in the session:
+
+```text
+/ecc-doctor
+```
+
+Expected: 313 installed skills (314 canonical), 98 commands plus `/ecc-doctor`, 71 agents, and 27 parsed hook commands (26 supported). PreCompact appears as unsupported. Use `/ecc-plan` for ECC planning because DSH owns `/plan`; use `ecc_agent` to delegate to an ECC specialist.
+
+To activate every profile instead of one:
+
+```bash
+node scripts/dsh/activate.js --all-profiles
+```
+
+To remove the managed block:
+
+```bash
+node scripts/dsh/activate.js --profile desktop --remove
+```
+
+The optional Nasiko control-plane skill is not in the default profile. Add it explicitly with `--modules nasiko-control-plane`. Full setup, hook mapping, and troubleshooting: [DeepSeek Harness guide](docs/DEEPSEEK-HARNESS-GUIDE.md).
+
 For a harness without a native ECC target, use the [manual adaptation guide](docs/MANUAL-ADAPTATION-GUIDE.md). It explains how to carry a small set of ECC skills and workflow instructions into chat-style tools without pretending hooks or native skill discovery are available.
 
 Cursor installs agent definitions under `.cursor/agents/ecc-*.md`. Cursor-native loading behavior can vary by Cursor build. ECC does not install root `AGENTS.md` into `.cursor/`. The adapter keeps Cursor's context scoped to its native rules and agent surfaces.
